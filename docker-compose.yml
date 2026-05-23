@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  llmlingua:
+    build:
+      context: ./llmlingua-service
+      dockerfile: Dockerfile
+    ports:
+      - "3006:3006"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:3006/docs')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "3005:3005"
+    depends_on:
+      - llmlingua
+    environment:
+      - PORT=3005
+      - LLMLINGUA_URL=http://llmlingua:3006/compress/stream
+      - DB_PATH=/usr/src/app/data/database.sqlite
+    volumes:
+      - prompt_shaper_data:/usr/src/app/data
+    restart: unless-stopped
+
+volumes:
+  prompt_shaper_data:
