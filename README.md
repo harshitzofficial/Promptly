@@ -66,34 +66,39 @@ Prompt Shaper is a three-component system designed to reduce LLM token consumpti
 ### High-Level Architecture
 
 ```mermaid
-graph TB
-    subgraph Browser["Browser (ChatGPT / Claude / Gemini)"]
-        CS[Content Script<br/>React Overlay]
-        BG[Background Service Worker]
-        PP[Popup Dashboard]
+flowchart LR
+    subgraph Platforms["Browser Platforms"]
+        direction TB
+        ChatGPT
+        Claude
+        Gemini
+    end
+
+    subgraph Extension["Browser Extension · WXT + React"]
+        direction TB
+        CS["Content Script<br/>content.tsx"]
+        BG["Background Worker<br/>background.ts"]
+        PP["Popup Dashboard<br/>popup/App.tsx"]
     end
 
     subgraph Backend["Node.js Backend :3005"]
-        API[Express REST API]
-        DB[(SQLite Database)]
-        TK[js-tiktoken<br/>Token Counter]
+        direction TB
+        API["Express REST API<br/>/api/optimize/stream · /api/track<br/>/api/session · /api/stats<br/>/api/pricing · /api/log-cache"]
     end
 
-    subgraph LLM["LLMLingua Microservice :3006"]
-        FA[FastAPI Server]
-        ML[LLMLingua-2 BERT Model]
-        FB[Regex Fallback]
+    subgraph LLMService["LLMLingua Service :3006"]
+        direction TB
+        FA["FastAPI<br/>/compress/stream<br/>/compress · /health"]
     end
 
-    CS -->|"optimize/stream"| BG
-    BG -->|"HTTP POST"| API
-    PP -->|"GET /api/stats"| API
-    PP -->|"GET/POST /api/pricing"| API
-    API -->|"SSE Proxy"| FA
-    FA --> ML
-    FA -.->|"Model unavailable"| FB
-    API --> DB
-    API --> TK
+    DB[("SQLite<br/>sessions · history · pricing")]
+
+    Platforms --- CS
+    CS <--> |messages| BG
+    PP -- "REST" --> API
+    BG -- "REST + SSE" --> API
+    API -- "SSE proxy" --> FA
+    API --- DB
 ```
 
 ---
