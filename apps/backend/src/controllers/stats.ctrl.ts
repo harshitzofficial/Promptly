@@ -46,7 +46,7 @@ export function trackApi(req: Request, res: Response) {
 }
 
 export function getSessionApi(req: Request, res: Response) {
-  const { sessionId } = req.params;
+  const sessionId = req.params.sessionId as string;
   const config = getPlatformConfig(sessionId);
   const session = getSession(sessionId);
   const timeUntilRefresh = config.refreshMs - (Date.now() - session.lastReset);

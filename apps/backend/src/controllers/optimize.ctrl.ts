@@ -21,9 +21,9 @@ export async function optimizeStream(req: Request, res: Response) {
   res.flushHeaders();
 
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY as string });
     const countRes = await ai.models.countTokens({ model: 'gemini-2.5-flash-lite', contents: prompt });
-    const originalTokens = countRes.totalTokens;
+    const originalTokens = countRes.totalTokens || 0;
     const targetPercent = Math.round((ratio ?? 0.6) * 100);
     
     const systemInstruction = `You are an expert context curator. The user is providing a prompt that needs to be shortened to save tokens. Your job is to condense the text while strictly preserving all instructions, facts, constraints, and the original intent. Remove conversational filler, redundant examples, and unnecessary politeness. Provide ONLY the optimized prompt, with no preamble. Target compression ratio: Keep approximately ${targetPercent}% of the original length.
@@ -53,7 +53,7 @@ Optimized: "Python script to print hello world."`;
     }
 
     const optCountRes = await ai.models.countTokens({ model: 'gemini-2.5-flash-lite', contents: compressed });
-    const optimizedTokens = optCountRes.totalTokens;
+    const optimizedTokens = optCountRes.totalTokens || 0;
     const tokensSaved = Math.max(0, originalTokens - optimizedTokens);
     let costSaved = 0;
 
