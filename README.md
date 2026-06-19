@@ -820,6 +820,5 @@ CREATE INDEX IF NOT EXISTS idx_history_session_time
 | **Provider Stream** | Direct client-side optimization using user-stored API keys, bypassing the Prompt Shaper backend |
 | **Fuzzy Prompt Cache** | A local cache using Levenshtein distance to find near-matches (≥ 95% similarity) for prompts |
 | **regexCompress** | Heuristic fallback compression using regex patterns to strip filler words when Gemini is unavailable |
-```
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/harshitzofficial/Prompt-shaper)
