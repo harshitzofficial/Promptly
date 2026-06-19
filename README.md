@@ -54,3 +54,5 @@ This builds the image from `apps/backend/Dockerfile`, exposes port **3005**, and
 
 - [`apps/backend/README.md`](apps/backend/README.md) — API routes, database schema, Docker details
 - [`apps/extension/README.md`](apps/extension/README.md) — extension permissions, caching, provider key management
+
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/harshitzofficial/Prompt-shaper)
