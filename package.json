@@ -1,0 +1,13 @@
+{
+  "name": "prompt-shaper",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npx concurrently \"npm run dev -w backend\" \"npm run dev -w extension\"",
+    "build": "npm run build --workspaces --if-present",
+    "install:all": "npm install"
+  }
+}

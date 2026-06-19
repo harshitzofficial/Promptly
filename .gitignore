@@ -1,0 +1,9 @@
+node_modules/
+.output/
+dist/
+build/
+.env
+.DS_Store
+*.log
+coverage/
+.wxt/

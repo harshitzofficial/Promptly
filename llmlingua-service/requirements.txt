@@ -1,3 +1,0 @@
-llmlingua
-fastapi
-uvicorn[standard]

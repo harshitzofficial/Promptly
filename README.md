@@ -1,5 +1,6 @@
 # Prompt Shaper
 
+<<<<<<< HEAD
 **Intelligent LLM Token Optimization & Cost Tracking System**
 
 Prompt Shaper is a browser extension + backend system that automatically compresses your prompts before they reach ChatGPT, Claude, or Gemini — reducing token usage, lowering API costs, and tracking savings in real time.
@@ -949,3 +950,27 @@ The `.dockerignore` files ensure clean builds:
 ## License
 
 This project is [ISC](https://opensource.org/licenses/ISC) licensed.
+=======
+A full-stack monorepo application containing a Chrome Extension and a Node.js API that optimizes AI prompts to reduce token costs.
+
+## Project Structure
+
+This project uses NPM Workspaces to manage multiple applications in one repository.
+
+- `/apps/extension` - The React/WXT browser extension.
+- `/apps/backend` - The Node.js Express server that interfaces with Gemini.
+
+## Getting Started
+
+1. Install all dependencies from the root:
+   ```bash
+   npm install
+   ```
+
+2. Run both the backend and extension in development mode simultaneously:
+   ```bash
+   npm run dev
+   ```
+
+*Make sure you have added your `GEMINI_API_KEY` to `/apps/backend/.env`!*
+>>>>>>> e216f71 (feat: Massive optimization refactor including True Streaming, Semantic Caching, Database Indexing, Fallback expansion, and Custom Provider Pricing API)
