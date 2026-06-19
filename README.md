@@ -612,134 +612,78 @@ graph LR
 
 ## Infrastructure & Deployment
 
-### Docker Containerization
+Prompt Shaper is designed for flexible deployment. The primary public instance uses a free-tier setup:
 
-The backend uses a single-stage `node:20-alpine` Dockerfile. Native build tools (`python3`, `make`, `g++`) are installed to compile `better-sqlite3` C++ bindings.
+1. **Backend API:** Deployed as a web service on **Render**.
+   - Public URL: `https://prompt-shaper.onrender.com`
+   - Automatically built from the `main` branch.
+2. **Browser Extension:** Packaged as a `.zip` file and distributed via GitHub.
 
-```mermaid
-graph TD
-    subgraph "Host Filesystem"
-        A["src/*.ts"]
-        B["package.json"]
-        C["tsconfig.json"]
-    end
+### Free-Tier Deployment Strategy
 
-    subgraph "Docker Build Context (node:20-alpine)"
-        D["RUN apk add python3 make g++"]
-        E["RUN npm ci"]
-        F["RUN npm run build (tsc)"]
-        G["dist/main.js"]
-    end
+If you wish to host your own instance for free:
 
-    A --> D
-    B --> E
-    C --> F
-    E --> F
-    F --> G
-    G --> H["CMD node dist/main.js"]
-```
+- **Backend (Render):** Connect your GitHub repo to Render, set the Root Directory to `apps/backend`, Build Command to `npm install && npm run build`, and Start Command to `npm start`. Add your `GEMINI_API_KEY` to the environment variables.
+- **Extension (GitHub Releases):** Run `npm run build` and `npm run zip` in the `apps/extension` folder, then upload the generated `.zip` to your GitHub Releases page to avoid Chrome Web Store fees.
 
-**`.dockerignore` exclusions:** `node_modules`, `dist`, `.env`, `database.sqlite`
-
-### Docker Compose Orchestration
-
-```yaml
-# docker-compose.yml
-services:
-  backend:
-    build:
-      context: ./apps/backend
-    ports:
-      - "3005:3005"
-    environment:
-      - PORT=3005
-      - DB_PATH=/usr/src/app/data/database.sqlite
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
-    volumes:
-      - prompt_shaper_data:/usr/src/app/data
-    restart: unless-stopped
-
-volumes:
-  prompt_shaper_data:
-```
-
-| Parameter | Value | Purpose |
-|:---|:---|:---|
-| Port mapping | `3005:3005` | Exposes backend to host |
-| Volume | `prompt_shaper_data` → `/usr/src/app/data` | Persists SQLite across restarts |
-| Restart policy | `unless-stopped` | High availability |
+*(Note: Render's free tier spins down after 15 minutes of inactivity and clears ephemeral storage, meaning SQLite history resets upon restart. For persistent free storage, consider Fly.io).*
 
 ---
 
 ## Getting Started
 
-### Prerequisites
+### Quick Install (Using Public Backend)
 
-- **Node.js** v20 or higher
-- **npm** v7+ (for workspace support)
-- **Google Gemini API Key** (required for AI-powered compression)
-- **Docker & Docker Compose** (optional, for containerized backend)
+The easiest way to use Prompt Shaper is to install the pre-built extension which is already connected to our live Render backend.
 
-### Installation
+1. Download the latest `extension-0.0.0-chrome.zip` from the root of this repository (or the Releases tab).
+2. Extract the `.zip` file to a folder on your computer.
+3. Open Google Chrome and navigate to `chrome://extensions`.
+4. Enable **Developer mode** using the toggle in the top right corner.
+5. Click **Load unpacked** and select the folder you just extracted.
+6. Open ChatGPT, Claude, or Gemini and start typing!
 
+### Local Development (Self-Hosted)
+
+If you want to run the backend yourself or modify the code:
+
+#### Prerequisites
+- **Node.js** v20+ and **npm**
+- **Google Gemini API Key**
+
+#### 1. Setup Backend
 ```bash
-# Clone the repository
 git clone https://github.com/harshitzofficial/Prompt-shaper.git
 cd Prompt-shaper
 
-# Install all workspace dependencies in one pass
+# Install dependencies
 npm install
-```
 
-### Environment Configuration
+# Add your Gemini Key
+echo "GEMINI_API_KEY=your_google_api_key_here" > apps/backend/.env
 
-**Backend** — create `apps/backend/.env`:
-
-```env
-GEMINI_API_KEY=your_google_gemini_api_key_here
-PORT=3005
-DB_PATH=database.sqlite
-```
-
-**Extension** — create `apps/extension/.env` (optional):
-
-```env
-WXT_BACKEND_URL=http://localhost:3005
-```
-
-### Running the Application
-
-```bash
-# Run backend + extension concurrently (recommended)
-npm run dev
-
-# Run backend only
+# Start the backend API on port 3005
 npm run dev -w backend
-
-# Run extension only
-npm run dev -w extension
-
-# Build all workspaces for production
-npm run build
 ```
 
-### Running with Docker
+#### 2. Setup Extension
+```bash
+# In a new terminal window
+echo "WXT_BACKEND_URL=http://localhost:3005" > apps/extension/.env
+
+# Run the extension dev server
+npm run dev -w extension
+```
+
+### Self-Hosting with Docker
+
+You can easily deploy the backend to your own VPS (DigitalOcean, AWS, etc.) using Docker Compose. This ensures your SQLite database history is persisted in a Docker volume.
 
 ```bash
-# Start the backend container (builds image automatically)
-GEMINI_API_KEY=your_key_here docker compose up --build
-
-# Run in detached mode
-GEMINI_API_KEY=your_key_here docker compose up --build -d
+# Add your Gemini API key to apps/backend/.env, then run:
+docker compose up -d --build
 ```
 
-After starting the backend, load the extension into your browser:
-
-1. Run `npm run build -w extension` to generate `.output/chrome-mv3/`
-2. Open Chrome → `chrome://extensions` → Enable **Developer Mode**
-3. Click **Load unpacked** → select `apps/extension/.output/chrome-mv3/`
-
----
 
 ## Environment Variables Reference
 
