@@ -5,6 +5,8 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
   modules: ['@wxt-dev/module-react'],
   manifest: {
+    name: 'Promptly',
+    description: 'Enhance your AI prompts directly in the browser',
     permissions: ['storage', 'contextMenus'],
     host_permissions: [
       '*://chatgpt.com/*',
