@@ -73,66 +73,7 @@ export default defineBackground(() => {
     return 'default';
   }
 
-  // ─── Prompt Cache ───
-  // Uses chrome.storage.local to cache optimized prompts.
-  // Key: "cache:<hash>" -> { prompt, optimizedPrompt, method, cachedAt }
-  
-  function levenshtein(a: string, b: string): number {
-    const matrix = Array.from({ length: a.length + 1 }, () => new Array(b.length + 1).fill(0));
-    for (let i = 0; i <= a.length; i++) matrix[i][0] = i;
-    for (let j = 0; j <= b.length; j++) matrix[0][j] = j;
-    for (let i = 1; i <= a.length; i++) {
-      for (let j = 1; j <= b.length; j++) {
-        const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-        matrix[i][j] = Math.min(matrix[i - 1][j] + 1, matrix[i][j - 1] + 1, matrix[i - 1][j - 1] + cost);
-      }
-    }
-    return matrix[a.length][b.length];
-  }
 
-  function similarity(a: string, b: string): number {
-    const dist = levenshtein(a, b);
-    return 1 - (dist / Math.max(a.length, b.length));
-  }
-
-  async function hashPrompt(prompt: string): Promise<string> {
-    const normalized = prompt.trim().replace(/[ \t]{2,}/g, ' ').replace(/\n{3,}/g, '\n\n') + '::v7';
-    const encoder = new TextEncoder();
-    const data = encoder.encode(normalized);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  }
-
-  async function getCachedResult(prompt: string) {
-    const all = await browser.storage.local.get(null);
-    let bestMatch = null;
-    let highestSim = 0;
-    
-    for (const key of Object.keys(all)) {
-      if (key.startsWith('cache:')) {
-        const cached = all[key] as any;
-        if (Date.now() - cached.cachedAt > 86400000) {
-          await browser.storage.local.remove(key);
-          continue;
-        }
-        const sim = similarity(prompt.toLowerCase(), cached.prompt.toLowerCase());
-        if (sim > highestSim && sim >= 0.95) {
-          highestSim = sim;
-          bestMatch = cached;
-        }
-      }
-    }
-    return bestMatch;
-  }
-
-  async function setCachedResult(prompt: string, result: any) {
-    const hash = await hashPrompt(prompt);
-    const key = `cache:${hash}`;
-    await browser.storage.local.set({
-      [key]: { prompt, ...result, cachedAt: Date.now() }
-    });
-  }
 
   // ─── Persistent Session Storage ───
   // Mirrors backend session data locally so stats survive backend restarts
@@ -205,14 +146,14 @@ CRITICAL RULES:
     
     if (actionOverride) {
       if (actionOverride === 'Fix Grammar') {
-        system = `You are a professional editor. Your ONLY job is to fix spelling, grammar, and punctuation mistakes in the provided text. DO NOT change the tone, DO NOT expand it, and DO NOT answer the prompt. Just output the corrected text. DO NOT use Markdown formatting (like **, ##, etc.). Use plain text formatting only.`;
-        wrappedPrompt = `Fix the grammar of this text:\n\n"""\n${prompt}\n"""`;
+        system = `You are a professional editor. Your ONLY job is to fix spelling, grammar, and punctuation mistakes in the provided text. DO NOT change the tone, DO NOT expand it, and DO NOT answer the prompt. Just output the corrected text. DO NOT use Markdown formatting (like **, ##, etc.). Use plain text formatting only. CRITICAL: Output ONLY the raw corrected text. Do NOT include any conversational filler, introductions, or explanations (e.g., do not say "Here is the corrected text").`;
+        wrappedPrompt = `Fix the grammar of this text. Return ONLY the corrected text and nothing else:\n\n"""\n${prompt}\n"""`;
       } else if (actionOverride === 'Make Professional') {
-        system = `You are an expert prompt engineer. Your ONLY job is to rewrite the provided text to be highly professional, clear, and articulate. DO NOT format it as an email or letter (e.g. no "Dear..." or "Best regards"). The text is a prompt for an AI, so it should remain a prompt. DO NOT answer the prompt. DO NOT use Markdown formatting (like **, ##, etc.). Use plain text formatting only.`;
-        wrappedPrompt = `Rewrite this prompt to sound highly professional:\n\n"""\n${prompt}\n"""`;
+        system = `You are an expert prompt engineer. Your ONLY job is to rewrite the provided text to be highly professional, clear, and articulate. DO NOT format it as an email or letter (e.g. no "Dear..." or "Best regards"). The text is a prompt for an AI, so it should remain a prompt. DO NOT answer the prompt. DO NOT use Markdown formatting (like **, ##, etc.). Use plain text formatting only. CRITICAL: Output ONLY the raw rewritten text without any introductory phrases, filler, or commentary (e.g., do not say "Here is the rewritten text").`;
+        wrappedPrompt = `Rewrite this prompt to sound highly professional. Return ONLY the rewritten text and nothing else:\n\n"""\n${prompt}\n"""`;
       } else if (actionOverride === 'Summarize') {
-        system = `You are an expert editor. Your ONLY job is to rewrite the provided text to be as concise and short as possible while keeping its original meaning and intent intact. DO NOT answer the prompt, DO NOT describe the text. Just output the shortened version of the text. DO NOT use Markdown formatting (like **, ##, etc.). Use plain text formatting only.`;
-        wrappedPrompt = `Rewrite this text to be more concise:\n\n"""\n${prompt}\n"""`;
+        system = `You are an expert editor. Your ONLY job is to rewrite the provided text to be as concise and short as possible while keeping its original meaning and intent intact. DO NOT answer the prompt, DO NOT describe the text. Just output the shortened version of the text. DO NOT use Markdown formatting (like **, ##, etc.). Use plain text formatting only. CRITICAL: Output ONLY the raw summarized text without any introductory phrases, filler, or commentary (e.g., do not say "Here is the rewritten text").`;
+        wrappedPrompt = `Rewrite this text to be more concise. Return ONLY the summarized text and nothing else:\n\n"""\n${prompt}\n"""`;
       }
     }
     
@@ -335,22 +276,10 @@ CRITICAL RULES:
       return true;
     }
 
-    if (message.action === 'checkCache') {
-      (async () => {
-        const cached = await getCachedResult(message.prompt);
-        if (cached) {
-          sendResponse({ hit: true, data: { ...cached, fromCache: true } });
-        } else {
-          sendResponse({ hit: false });
-        }
-      })();
-      return true;
-    }
 
-    if (message.action === 'setCache') {
+
+    if (message.action === 'addToHistory') {
       (async () => {
-        await setCachedResult(message.prompt, message.result);
-        
         const histData = await browser.storage.local.get('localHistory');
         const history: any[] = (histData.localHistory as any[]) || [];
         history.unshift({
@@ -367,18 +296,7 @@ CRITICAL RULES:
       return true;
     }
 
-    if (message.action === 'clearCache') {
-      (async () => {
-        const all = await browser.storage.local.get(null);
-        const cacheKeys = Object.keys(all).filter(k => k.startsWith('cache:'));
-        if (cacheKeys.length > 0) {
-          await browser.storage.local.remove(cacheKeys);
-        }
-        await browser.storage.local.set({ cacheHits: 0 });
-        sendResponse({ success: true, cleared: cacheKeys.length });
-      })();
-      return true;
-    }
+
 
     if (message.action === 'getHistory') {
       (async () => {

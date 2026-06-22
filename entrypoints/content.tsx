@@ -13,7 +13,7 @@ declare global {
 }
 
 const App = () => {
-  const [successNotice, setSuccessNotice] = useState<{ method: string, isCacheHit: boolean } | null>(null);
+  const [successNotice, setSuccessNotice] = useState<{ method: string } | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isWorking, setIsWorking] = useState(false);
 
@@ -57,18 +57,7 @@ const App = () => {
     try {
       const processOutput = (optText: string) => optText;
 
-      // 1. Check cache first
       setIsWorking(true);
-      const cacheRes = await browser.runtime.sendMessage({ action: 'checkCache', prompt: text });
-      if (cacheRes?.hit && cacheRes.data?.optimizedPrompt) {
-        setEditableText(target, processOutput(cacheRes.data.optimizedPrompt));
-        setSuccessNotice({ method: cacheRes.data.method, isCacheHit: true });
-        setTimeout(() => setSuccessNotice(null), 4000);
-        setIsWorking(false);
-        return;
-      }
-
-      // 2. Check for custom provider key
       const port = browser.runtime.connect({ name: 'providerStream' });
 
       const providerRes: any = await new Promise((resolve) => {
@@ -95,11 +84,11 @@ const App = () => {
 
       if (providerRes?.success && providerRes.optimizedPrompt) {
         browser.runtime.sendMessage({
-          action: 'setCache', prompt: text, result: {
+          action: 'addToHistory', prompt: text, result: {
             optimizedPrompt: providerRes.optimizedPrompt, method: providerRes.method
           }
         });
-        setSuccessNotice({ method: providerRes.method, isCacheHit: false });
+        setSuccessNotice({ method: providerRes.method });
         setTimeout(() => setSuccessNotice(null), 4000);
         return;
       }

@@ -17,10 +17,9 @@ Promptly is a **Manifest V3 Chrome Extension** built with the [WXT framework](ht
   - [Subsystem Relationships](#subsystem-relationships)
 - [Data Flow](#data-flow)
   - [Prompt Optimization Sequence](#prompt-optimization-sequence)
-  - [Caching Strategy](#caching-strategy)
   - [Settings Propagation](#settings-propagation)
 - [AI Provider Integration](#ai-provider-integration)
-- [Prompt Cache & History](#prompt-cache--history)
+- [Prompt History](#prompt-history)
 - [Message Passing API](#message-passing-api)
 - [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
@@ -40,7 +39,6 @@ Promptly is a **Manifest V3 Chrome Extension** built with the [WXT framework](ht
 - **Right-Click Context Menu** — "✨ Optimize Prompt" available via browser context menu
 - **Real-Time Streaming** — Optimized text streams token-by-token directly into the textarea, mimicking native AI UX
 - **Multi-Provider Support** — OpenAI (GPT-4o mini), Anthropic (Claude Haiku), Google Gemini, and local Ollama
-- **Smart Prompt Cache** — SHA-256 hashing + Levenshtein fuzzy matching (≥95% similarity) with 24-hour TTL
 - **Prompt History** — 15-entry ring buffer with re-injection into the active tab
 - **Tone & Detail Control** — Professional, Creative, Technical, Simple tones; Concise/Balanced/Comprehensive detail levels
 - **Shadow DOM Isolation** — Extension UI never conflicts with host page styles
@@ -114,7 +112,6 @@ Promptly follows the standard Chrome MV3 three-context architecture, with each l
 │          │  Background Service Worker    │                  │
 │          │  background.ts                │                  │
 │          │  • AI Provider routing        │                  │
-│          │  • SHA-256 Prompt Cache       │                  │
 │          │  • History ring buffer        │                  │
 │          │  • API key management         │                  │
 │          └──────────────┬────────────────┘                  │
@@ -154,7 +151,6 @@ graph TB
 
         subgraph "Background Service Worker"
             BG_MSG["Message Handler"]
-            BG_CACHE["Prompt Cache"]
             BG_KEYS["API Key Storage"]
             BG_STREAM["Streaming Handler"]
             BG_MENU["Context Menu"]
@@ -184,8 +180,6 @@ graph TB
     BG_MSG -- "history data" --> POPUP_HISTORY
 
     %% Content Script Communication
-    CS_SHADOW -- "checkCache" --> BG_MSG
-    BG_MSG -- "cache hit/miss" --> CS_SHADOW
     CS_SHADOW -- "providerStream port" --> BG_STREAM
     BG_STREAM -- "streaming chunks" --> CS_SHADOW
     CS_DOM -- "read/write textarea" --> CHATGPT
@@ -199,7 +193,6 @@ graph TB
     BG_STREAM -- "API requests" --> OLLAMA
 
     %% Storage Communication
-    BG_CACHE -- "get/set cache" --> STORAGE
     BG_KEYS -- "get/set API keys" --> STORAGE
 
     %% Context Menu
@@ -254,7 +247,6 @@ graph TD
 
     subgraph "Background Context"
         BSW["background.ts (Service Worker)"]
-        Cache["SHA-256 Cache Manager"]
         Prov["AI Provider Router"]
     end
 
@@ -269,7 +261,6 @@ graph TD
     Pills -- "providerStream port" --> BSW
     BSW -- "inject-prompt" --> ShadowDOM
     BSW -- "fetch (streaming)" --> AI_API["External AI APIs"]
-    Cache -- "chrome.storage.local" --> STORE[("Local Storage")]
 ```
 
 ---
@@ -288,58 +279,22 @@ sequenceDiagram
 
     User->>CS: Clicks Pill / Ctrl+Shift+O
     CS->>CS: getActiveEditable() [utils/dom.ts]
-    CS->>BG: sendMessage({ action: 'checkCache', prompt })
-    BG->>BG: hashPrompt(prompt) — SHA-256
-    BG->>Storage: get(null) — all keys
-    Storage-->>BG: All cache entries
-
-    alt Cache Hit (similarity >= 0.95)
-        BG-->>CS: { hit: true, data: { optimizedPrompt } }
-        CS->>CS: setEditableText(target, optimizedPrompt)
-        CS->>User: ToastNotification (Cache Hit)
-    else Cache Miss
-        CS->>BG: connect({ name: 'providerStream' })
-        BG->>BG: getProviderSettings()
-        BG->>BG: SYSTEM_INSTRUCTION(tone) + detailInstruction
-        BG->>AI: POST (streaming request)
+    CS->>BG: connect({ name: 'providerStream' })
+    BG->>BG: getProviderSettings()
+    BG->>BG: SYSTEM_INSTRUCTION(tone) + detailInstruction
+    BG->>AI: POST (streaming request)
         loop Stream Chunks
             AI-->>BG: SSE / NDJSON chunk
             BG-->>CS: port.postMessage({ type: 'chunk', text })
             CS->>CS: setEditableText(target, partialText)
         end
         BG-->>CS: port.postMessage({ type: 'done', method, fullText })
-        CS->>BG: sendMessage({ action: 'setCache', ... })
-        BG->>Storage: set({ 'cache:hash': data })
+        CS->>BG: sendMessage({ action: 'addToHistory', ... })
         BG->>Storage: set({ localHistory: [...] })
         CS->>User: ToastNotification (Provider icon)
-    end
 ```
 
-### Caching Strategy
 
-The cache uses a two-step lookup to maximize hit rates while tolerating minor prompt variations:
-
-```mermaid
-graph TD
-    START["getCachedResult(prompt)"] --> FETCH["storage.local.get(null)"]
-    FETCH --> ITER["Iterate keys starting with 'cache:'"]
-    ITER --> TTL{"Age > 24 hours?"}
-    TTL -- "Yes" --> DEL["Remove expired entry"]
-    TTL -- "No" --> SIM["similarity(prompt, cached.prompt)"]
-    SIM --> THRESH{"Score >= 0.95?"}
-    THRESH -- "Yes" --> BEST["Track as bestMatch"]
-    THRESH -- "No" --> ITER
-    BEST --> RETURN["Return bestMatch"]
-    DEL --> ITER
-```
-
-| Step | Detail |
-|---|---|
-| **Normalization** | Trim, collapse whitespace, append `::v7` version suffix |
-| **Hashing** | `crypto.subtle.digest('SHA-256', ...)` for exact-match key |
-| **Fuzzy Match** | Levenshtein distance: `1 - (dist / max(len_a, len_b))` |
-| **Threshold** | ≥ 0.95 similarity required for a cache hit |
-| **TTL** | 86,400,000 ms (24 hours); expired entries auto-removed |
 
 ### Settings Propagation
 
@@ -380,9 +335,7 @@ All API calls are made **directly from the Background Service Worker** — API k
 
 ```mermaid
 graph TD
-    MSG["providerStream port message"] --> CACHE{"Cache Hit?"}
-    CACHE -- "Yes" --> SERVE["Serve from cache"]
-    CACHE -- "No" --> PREF["getProviderSettings()"]
+    MSG["providerStream port message"] --> PREF["getProviderSettings()"]
     PREF --> SWITCH{"preferredProvider"}
     SWITCH -- "openai" --> OAI["streamProvider('openai', ...)"]
     SWITCH -- "anthropic" --> ANT["streamProvider('anthropic', ...)"]
@@ -414,20 +367,7 @@ When a Quick Action Pill is clicked (not the main Optimize button), an `actionOv
 
 ---
 
-## Prompt Cache & History
-
-### Cache Storage Schema
-
-Each cache entry is stored under the key `cache:<sha256hash>`:
-
-```json
-{
-  "prompt": "original user prompt",
-  "optimizedPrompt": "enhanced output",
-  "method": "gemini-agent",
-  "cachedAt": 1718000000000
-}
-```
+## Prompt History
 
 ### History Ring Buffer
 
@@ -443,7 +383,6 @@ The `localHistory` array in `chrome.storage.local` stores the last **15** enhanc
 
 History entries are displayed in the Popup's **History Tab** with color-coded method badges:
 - **Purple** — `gemini-agent`
-- **Green** — `cache`
 - **Orange** — other providers
 
 ---
@@ -456,9 +395,7 @@ Communication between extension contexts uses `browser.runtime.sendMessage` (one
 
 | Action | Direction | Description |
 |---|---|---|
-| `checkCache` | Content → Background | Check if prompt has a cached result |
-| `setCache` | Content → Background | Store a new optimization result |
-| `clearCache` | Popup → Background | Remove all `cache:` keys from storage |
+| `addToHistory` | Content → Background | Store a new optimization result in history |
 | `getHistory` | Popup → Background | Retrieve `localHistory` array |
 | `getProviderSettings` | Any → Background | Get provider config (keys masked) |
 | `setProviderKey` | Popup → Background | Save an API key and set preferred provider |
@@ -587,7 +524,7 @@ Use the **Style** tab to set your preferred **Tone** and **Detail Level**. These
 
 | Permission | Reason |
 |---|---|
-| `storage` | Persist API keys, cache, history, and user preferences |
+| `storage` | Persist API keys, history, and user preferences |
 | `contextMenus` | Register the "✨ Optimize Prompt" right-click menu item |
 | `*://chatgpt.com/*` | Inject content script into ChatGPT |
 | `*://claude.ai/*` | Inject content script into Claude |

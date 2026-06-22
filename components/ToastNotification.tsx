@@ -9,7 +9,7 @@ export const ToastNotification = ({
 }: {
   errorMsg: string | null;
   setErrorMsg: (msg: string | null) => void;
-  successNotice: { method: string, isCacheHit: boolean } | null;
+  successNotice: { method: string } | null;
   isWorking?: boolean;
 }) => {
   return (
@@ -56,9 +56,7 @@ export const ToastNotification = ({
             <span className="font-semibold tracking-wide">Prompt Enhanced</span>
           </div>
           <div className="flex items-center gap-2 text-[11px] text-[#888]">
-            {successNotice.isCacheHit
-              ? <><Zap size={12} className="text-green-500" /> <span>Served from cache</span></>
-              : successNotice.method === 'gemini-agent'
+            {successNotice.method === 'gemini-agent'
                 ? <><Bot size={12} className="text-purple-400" /> <span>Enhanced by AI Agent</span></>
                 : successNotice.method === 'openai'
                   ? <><Bot size={12} className="text-emerald-400" /> <span>Enhanced by GPT-4o mini</span></>

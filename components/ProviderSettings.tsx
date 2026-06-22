@@ -11,21 +11,12 @@ export const ProviderSettings = () => {
   const [showOpenai, setShowOpenai] = useState(false);
   const [showAnthropic, setShowAnthropic] = useState(false);
   const [savedProvider, setSavedProvider] = useState<string | null>(null);
-  const [cacheCleared, setCacheCleared] = useState(false);
 
   useEffect(() => {
     browser.runtime.sendMessage({ action: 'getProviderSettings' })
       .then((res: any) => { if (res.success) setProviderSettings(res.data); })
       .catch(console.error);
   }, []);
-
-  const handleClearCache = async () => {
-    const res: any = await browser.runtime.sendMessage({ action: 'clearCache' });
-    if (res?.success) {
-      setCacheCleared(true);
-      setTimeout(() => setCacheCleared(false), 3000);
-    }
-  };
 
   const handleSaveKey = (provider: 'openai' | 'anthropic' | 'gemini' | 'ollama') => {
     const key = provider === 'openai' ? openaiInput : provider === 'anthropic' ? anthropicInput : provider === 'ollama' ? ollamaInput : geminiInput;
@@ -169,28 +160,6 @@ export const ProviderSettings = () => {
         </div>
       </div>
 
-      <div className="border-t border-[#1a1a1a]" />
-
-      {/* Cache Management */}
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center gap-2 mb-1">
-          <Trash2 size={18} className="text-gray-400" />
-          <h2 className="text-[14px] font-bold">Cache Management</h2>
-        </div>
-        <p className="text-xs text-[#666] leading-relaxed -mt-1">
-          The extension caches enhanced prompts for 24h to save API costs. Clear the cache if you see stale or outdated results.
-        </p>
-        <button
-          onClick={handleClearCache}
-          className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-[12px] font-bold transition-all border ${
-            cacheCleared
-              ? 'bg-green-500/10 text-green-400 border-green-500/30'
-              : 'bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20'
-          }`}
-        >
-          {cacheCleared ? '✓ Cache cleared successfully!' : <><Trash2 size={14} /> Clear Prompt Cache</>}
-        </button>
-      </div>
     </div>
   );
 };
