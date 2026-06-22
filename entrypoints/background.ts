@@ -181,6 +181,7 @@ CRITICAL RULES:
 - NEVER answer the user's question. Only rewrite the prompt.
 - NEVER shorten or summarise. Always expand.
 - The enhanced prompt MUST be more detailed and longer than the original.
+- DO NOT use Markdown formatting (like **, ##, etc.). Use plain text formatting only (e.g., UPPERCASE for emphasis or standard numbers for lists).
 - Example input: "what is an api" → Example output: "Act as an expert computer science professor teaching a beginner. Explain what an API (Application Programming Interface) is, starting with a simple real-world analogy. Cover: what it is, how it works, why it matters, types of APIs (REST, SOAP, GraphQL), and include a short code example. Structure your answer with clear headings and think step-by-step."`;
   };
 
@@ -204,14 +205,14 @@ CRITICAL RULES:
     
     if (actionOverride) {
       if (actionOverride === 'Fix Grammar') {
-        system = `You are a professional editor. Your ONLY job is to fix spelling, grammar, and punctuation mistakes in the provided text. DO NOT change the tone, DO NOT expand it, and DO NOT answer the prompt. Just output the corrected text.`;
+        system = `You are a professional editor. Your ONLY job is to fix spelling, grammar, and punctuation mistakes in the provided text. DO NOT change the tone, DO NOT expand it, and DO NOT answer the prompt. Just output the corrected text. DO NOT use Markdown formatting (like **, ##, etc.). Use plain text formatting only.`;
         wrappedPrompt = `Fix the grammar of this text:\n\n"""\n${prompt}\n"""`;
       } else if (actionOverride === 'Make Professional') {
-        system = `You are an elite corporate communicator. Your ONLY job is to rewrite the provided text to be highly professional, structured, and polite. DO NOT answer the prompt. Just rewrite it into a professional format.`;
-        wrappedPrompt = `Rewrite this text to be professional:\n\n"""\n${prompt}\n"""`;
+        system = `You are an expert prompt engineer. Your ONLY job is to rewrite the provided text to be highly professional, clear, and articulate. DO NOT format it as an email or letter (e.g. no "Dear..." or "Best regards"). The text is a prompt for an AI, so it should remain a prompt. DO NOT answer the prompt. DO NOT use Markdown formatting (like **, ##, etc.). Use plain text formatting only.`;
+        wrappedPrompt = `Rewrite this prompt to sound highly professional:\n\n"""\n${prompt}\n"""`;
       } else if (actionOverride === 'Summarize') {
-        system = `You are an expert summarizer. Your ONLY job is to summarize the provided text concisely. DO NOT answer the prompt. Just output the summary.`;
-        wrappedPrompt = `Summarize this text:\n\n"""\n${prompt}\n"""`;
+        system = `You are an expert editor. Your ONLY job is to rewrite the provided text to be as concise and short as possible while keeping its original meaning and intent intact. DO NOT answer the prompt, DO NOT describe the text. Just output the shortened version of the text. DO NOT use Markdown formatting (like **, ##, etc.). Use plain text formatting only.`;
+        wrappedPrompt = `Rewrite this text to be more concise:\n\n"""\n${prompt}\n"""`;
       }
     }
     

@@ -15,6 +15,7 @@ declare global {
 const App = () => {
   const [successNotice, setSuccessNotice] = useState<{ method: string, isCacheHit: boolean } | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isWorking, setIsWorking] = useState(false);
 
   useEffect(() => {
     const handleMessage = (msg: any) => {
@@ -57,11 +58,13 @@ const App = () => {
       const processOutput = (optText: string) => optText;
 
       // 1. Check cache first
+      setIsWorking(true);
       const cacheRes = await browser.runtime.sendMessage({ action: 'checkCache', prompt: text });
       if (cacheRes?.hit && cacheRes.data?.optimizedPrompt) {
         setEditableText(target, processOutput(cacheRes.data.optimizedPrompt));
         setSuccessNotice({ method: cacheRes.data.method, isCacheHit: true });
         setTimeout(() => setSuccessNotice(null), 4000);
+        setIsWorking(false);
         return;
       }
 
@@ -74,13 +77,15 @@ const App = () => {
 
         port.onMessage.addListener((msg) => {
           if (msg.type === 'error') {
+            setIsWorking(false);
             showError(`${msg.error || 'Unknown error.'}`);
             resolve({ success: false });
           } else if (msg.type === 'chunk') {
-            if (!started) { setEditableText(target, ''); started = true; }
+            if (!started) { setIsWorking(false); setEditableText(target, ''); started = true; }
             streamed += msg.text;
             setEditableText(target, processOutput(streamed));
           } else if (msg.type === 'done') {
+            setIsWorking(false);
             resolve({ success: true, optimizedPrompt: msg.fullText, method: msg.method });
           }
         });
@@ -105,6 +110,7 @@ const App = () => {
 
     } catch (e: any) {
       console.error('[optimize stream]', e);
+      setIsWorking(false);
       showError(`❌ Enhancement failed: ${e?.message || 'Unknown error'}`);
     }
   };
@@ -112,7 +118,7 @@ const App = () => {
   return (
     <>
       <QuickActionPills handleOptimize={handleOptimize} />
-      <ToastNotification errorMsg={errorMsg} setErrorMsg={setErrorMsg} successNotice={successNotice} />
+      <ToastNotification errorMsg={errorMsg} setErrorMsg={setErrorMsg} successNotice={successNotice} isWorking={isWorking} />
       <SidebarSlider />
     </>
   );

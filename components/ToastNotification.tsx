@@ -1,14 +1,16 @@
 import React from 'react';
-import { AlertTriangle, XCircle, Sparkles, Zap, Bot, Settings as Cog } from 'lucide-react';
+import { AlertTriangle, XCircle, Sparkles, Zap, Bot, Settings as Cog, Loader2 } from 'lucide-react';
 
 export const ToastNotification = ({
   errorMsg,
   setErrorMsg,
-  successNotice
+  successNotice,
+  isWorking
 }: {
   errorMsg: string | null;
   setErrorMsg: (msg: string | null) => void;
   successNotice: { method: string, isCacheHit: boolean } | null;
+  isWorking?: boolean;
 }) => {
   return (
     <>
@@ -37,6 +39,13 @@ export const ToastNotification = ({
           <button onClick={() => setErrorMsg(null)} className="text-red-500/50 hover:text-red-400">
             <XCircle size={14} />
           </button>
+        </div>
+      )}
+
+      {isWorking && (
+        <div className="fixed top-8 right-8 z-[100000] bg-[#111] text-[#eee] px-4 py-3 rounded-md shadow-[0_8px_30px_rgba(0,0,0,0.4)] border border-[#333] text-[13px] pointer-events-auto flex items-center gap-3 min-w-[200px] animate-[fadeIn_0.2s_ease]">
+          <Loader2 size={16} className="text-blue-400 animate-spin" />
+          <span className="font-medium tracking-wide text-[12px] text-gray-200">Optimizing Prompt...</span>
         </div>
       )}
 
