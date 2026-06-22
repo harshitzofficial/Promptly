@@ -394,15 +394,44 @@ Communication between extension contexts uses `browser.runtime.sendMessage` (one
 
 Used for streaming AI responses chunk-by-chunk:
 
-```
-Content Script                    Background Worker
-     │                                   │
-     │── connect({ name: 'providerStream' }) ──▶│
-     │── port.postMessage({ prompt, actionOverride }) ──▶│
-     │                                   │── fetch(AI API)
-     │◀── { type: 'chunk', text: '...' } ──│  (loop)
-     │◀── { type: 'done', method, fullText } ──│
-     │  (or { type: 'error', error: '...' })   │
+```mermaid
+
+sequenceDiagram
+
+    participant CS as Content Script
+
+    participant BW as Background Worker
+
+
+
+    CS->>BW: connect({ name: "providerStream" })
+
+    CS->>BW: port.postMessage({ prompt, actionOverride })
+
+
+
+    BW->>BW: fetch(AI API)\n(streaming loop)
+
+
+
+    loop Stream chunks
+
+        BW-->>CS: { type: "chunk", text: "..." }
+
+    end
+
+
+
+    BW-->>CS: { type: "done", method, fullText }
+
+
+
+    alt Error
+
+        BW-->>CS: { type: "error", error: "..." }
+
+    end
+
 ```
 
 ---
@@ -487,4 +516,5 @@ Use the **Style** tab to set your preferred **Tone** and **Detail Level**. These
 | `https://api.anthropic.com/*` | Direct API calls from background worker |
 | `https://generativelanguage.googleapis.com/*` | Direct API calls from background worker |
 | `http://localhost:3005/*` | Local development backend |
-``` 
+
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/harshitzofficial/Promptly)
