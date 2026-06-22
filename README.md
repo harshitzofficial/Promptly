@@ -135,6 +135,82 @@ Promptly follows the standard Chrome MV3 three-context architecture, with each l
 └─────────────────────────────────────────────────────────────┘
 ```
 
+```mermaid
+graph TB
+    subgraph "Browser Environment"
+        subgraph "Popup UI"
+            POPUP["Popup Interface"]
+            POPUP_SETTINGS["Settings Management"]
+            POPUP_HISTORY["History Display"]
+        end
+
+        subgraph "Content Script"
+            CS_SHADOW["Shadow DOM UI"]
+            CS_PILLS["Quick Action Pills"]
+            CS_SIDEBAR["Sidebar Slider"]
+            CS_TOAST["Toast Notifications"]
+            CS_DOM["DOM Manipulation"]
+        end
+
+        subgraph "Background Service Worker"
+            BG_MSG["Message Handler"]
+            BG_CACHE["Prompt Cache"]
+            BG_KEYS["API Key Storage"]
+            BG_STREAM["Streaming Handler"]
+            BG_MENU["Context Menu"]
+        end
+
+        subgraph "Browser Storage"
+            STORAGE["chrome.storage.local"]
+        end
+    end
+
+    subgraph "External AI Providers"
+        OPENAI["OpenAI API"]
+        ANTHROPIC["Anthropic API"]
+        GEMINI["Gemini API"]
+        OLLAMA["Ollama API"]
+    end
+
+    subgraph "Target Platforms"
+        CHATGPT["ChatGPT"]
+        CLAUDE["Claude"]
+        GEMINI_WEB["Gemini Web"]
+    end
+
+    %% Popup Communication
+    POPUP -- "sendMessage/getHistory" --> BG_MSG
+    POPUP -- "setProviderKey" --> BG_KEYS
+    BG_MSG -- "history data" --> POPUP_HISTORY
+
+    %% Content Script Communication
+    CS_SHADOW -- "checkCache" --> BG_MSG
+    BG_MSG -- "cache hit/miss" --> CS_SHADOW
+    CS_SHADOW -- "providerStream port" --> BG_STREAM
+    BG_STREAM -- "streaming chunks" --> CS_SHADOW
+    CS_DOM -- "read/write textarea" --> CHATGPT
+    CS_DOM -- "read/write textarea" --> CLAUDE
+    CS_DOM -- "read/write textarea" --> GEMINI_WEB
+
+    %% Background External Communication
+    BG_STREAM -- "API requests" --> OPENAI
+    BG_STREAM -- "API requests" --> ANTHROPIC
+    BG_STREAM -- "API requests" --> GEMINI
+    BG_STREAM -- "API requests" --> OLLAMA
+
+    %% Storage Communication
+    BG_CACHE -- "get/set cache" --> STORAGE
+    BG_KEYS -- "get/set API keys" --> STORAGE
+
+    %% Context Menu
+    BG_MENU -- "trigger-optimize" --> CS_SHADOW
+
+    %% Internal Content Script
+    CS_PILLS -- "handleOptimize" --> CS_SHADOW
+    CS_SIDEBAR -- "tone selection" --> CS_SHADOW
+    CS_TOAST -- "notifications" --> CS_SHADOW
+```
+
 ### Component Hierarchy
 
 ```mermaid
