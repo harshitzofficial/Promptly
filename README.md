@@ -551,6 +551,9 @@ WXT_BACKEND_URL=http://localhost:3005
 
 ### Loading in Browser
 
+Download chrome-mv3.zip from root of this repo.
+
+
 **Chrome / Edge / Brave:**
 1. Go to `chrome://extensions/`
 2. Enable **Developer mode** (top-right toggle)
@@ -561,6 +564,7 @@ WXT_BACKEND_URL=http://localhost:3005
 1. Go to `about:debugging#/runtime/this-firefox`
 2. Click **Load Temporary Add-on...**
 3. Select `manifest.json` inside `.output/firefox-mv2/`
+
 
 ---
 
