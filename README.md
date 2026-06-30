@@ -4,6 +4,28 @@
 
 Promptly is a **Manifest V3 Chrome Extension** built with the [WXT framework](https://wxt.dev/), React 19, and Tailwind CSS v4. It injects a seamless UI overlay into ChatGPT, Claude, and Gemini, allowing you to optimize prompts in one click using OpenAI, Anthropic, Google Gemini, or a local Ollama instance — all without your API keys ever leaving your machine.
 
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/c5fa5f64-8856-48f7-b844-7d2dd682aeb6"
+       width="900"
+       alt="Desktop Screenshot">
+</p>
+
+<table align="center">
+  <tr>
+    <td align="center">
+      <img src="https://github.com/user-attachments/assets/c25ba6bf-912f-47a0-bbd8-568d88e0af38"
+           width="280"
+           alt="Mobile Screenshot 1">
+    </td>
+    <td align="center">
+      <img src="https://github.com/user-attachments/assets/3ae1295e-de7b-4401-98a6-432bc89cc326"
+           width="280"
+           alt="Mobile Screenshot 2">
+    </td>
+  </tr>
+</table>
+
+
 ---
 
 ## Table of Contents
@@ -43,30 +65,6 @@ Promptly is a **Manifest V3 Chrome Extension** built with the [WXT framework](ht
 - **Tone & Detail Control** — Professional, Creative, Technical, Simple tones; Concise/Balanced/Comprehensive detail levels
 - **Shadow DOM Isolation** — Extension UI never conflicts with host page styles
 - **Privacy First** — API keys stored locally in `chrome.storage.local`, never sent to any intermediary server
-
-## Screenshots
-
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/c5fa5f64-8856-48f7-b844-7d2dd682aeb6"
-       width="900"
-       alt="Desktop Screenshot">
-</p>
-
-<table align="center">
-  <tr>
-    <td align="center">
-      <img src="https://github.com/user-attachments/assets/c25ba6bf-912f-47a0-bbd8-568d88e0af38"
-           width="280"
-           alt="Mobile Screenshot 1">
-    </td>
-    <td align="center">
-      <img src="https://github.com/user-attachments/assets/3ae1295e-de7b-4401-98a6-432bc89cc326"
-           width="280"
-           alt="Mobile Screenshot 2">
-    </td>
-  </tr>
-</table>
-
 
 ---
 ## Tech Stack
