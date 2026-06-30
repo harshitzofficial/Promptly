@@ -18,7 +18,7 @@ Promptly is a **Manifest V3 Chrome Extension** built with the [WXT framework](ht
            alt="Mobile Screenshot 1">
     </td>
      <td align="center">
-      <img width="561" height="795" alt="image" src="https://github.com/user-attachments/assets/a8e9107f-549a-4184-bbe6-5f82636174a5" />
+      <img width="280"  alt="image" src="https://github.com/user-attachments/assets/a8e9107f-549a-4184-bbe6-5f82636174a5" />
     </td>
     <td align="center">
       <img src="https://github.com/user-attachments/assets/3ae1295e-de7b-4401-98a6-432bc89cc326"
