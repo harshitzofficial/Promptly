@@ -44,6 +44,11 @@ Promptly is a **Manifest V3 Chrome Extension** built with the [WXT framework](ht
 - **Shadow DOM Isolation** — Extension UI never conflicts with host page styles
 - **Privacy First** — API keys stored locally in `chrome.storage.local`, never sent to any intermediary server
 
+<img width="1402" height="701" alt="image" src="https://github.com/user-attachments/assets/c5fa5f64-8856-48f7-b844-7d2dd682aeb6" />
+<img width="563" height="811" alt="image" src="https://github.com/user-attachments/assets/c25ba6bf-912f-47a0-bbd8-568d88e0af38" />
+<img width="570" height="790" alt="image" src="https://github.com/user-attachments/assets/3ae1295e-de7b-4401-98a6-432bc89cc326" />
+
+
 ---
 
 ## Tech Stack
